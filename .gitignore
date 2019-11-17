@@ -132,3 +132,5 @@ dmypy.json
 
 #Self-made files/folders to not include
 .idea
+service_account*
+/Resources
