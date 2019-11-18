@@ -5,13 +5,14 @@ import time
 
 # Importing internal libraries
 from util.utilFunctions import *
+from util.cloudFunctions import *
 
 
 
 class Scraper:
     def __init__(self, soort="koophuizen", stad_url="noord+brabant/west-noord-brabant/breda", huissoort=None):
         self.city = stad_url.rsplit("/", 1)[-1]
-        self.soort = soort if soort in ["koophuizen", "huurhuizen"] else None
+        self.soort = soort if soort in ["koophuizen", "huurhuizen"] else "koophuizen"
         self.stad_url = stad_url
         self.huissoort = huissoort if huissoort in ["appartement", "woonhuis"] else None
         self.url = f"https://www.jaap.nl/{self.soort}/{self.stad_url}/{self.huissoort + '/' if self.huissoort else ''}"
@@ -31,7 +32,7 @@ class Scraper:
             for link in soup.findAll("a", {"class": "property-inner"}, href=True):
                 self.links.append(link["href"])
 
-    def simple_scrape(self):
+    def simple_scrape(self, loc_data=False):
         df = pd.DataFrame()
 
         for current_page in range(0, self.n_pages):
@@ -49,7 +50,7 @@ class Scraper:
 
                 # Getting the postal code
                 postal_code = house.find("div", {"class": "property-address-zipcity"}).text
-                postal_code = postal_code[:7]
+                postal_code = postal_code[:7] if postal_code[:7] is not "Breda" else None
 
                 # Getting the price
                 price = house.find("div", {"class": "price-info"}).text
@@ -71,11 +72,13 @@ class Scraper:
                 row_json = {"address": address, "city": self.city, "postal_code": postal_code,
                             "price": price, "sold": sold, "house_type": house_type,
                             "number_of_rooms": number_of_rooms, "square_meters": square_meters,
-                            "price_per_sqm": price_per_sqm}
+                            "price_per_sqm": price_per_sqm, "lat":None, "lng":None,
+                            "neighbourhood": None, "living_units":None}
 
                 # Appending it to the dataframe
                 df = df.append(row_json, ignore_index=True)
 
+        df = df.drop_duplicates()
         return df
 
     def complete_scrape(self):

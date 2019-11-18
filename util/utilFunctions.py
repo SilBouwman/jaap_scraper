@@ -1,16 +1,11 @@
 # Importing external libraries
 import requests
+import os
 from bs4 import BeautifulSoup
-from google.oauth2 import service_account
-import pandas_gbq
 import re
+from datetime import datetime
 
 # Importing internal libraries
-
-
-# AUTH
-credentials = service_account.Credentials.from_service_account_file(
-    'Resources/service_account_bigquery.json')
 
 
 def largest_number(in_str):
@@ -28,21 +23,12 @@ def get_page(url):
     soup = BeautifulSoup(response.text, "html.parser")
     return soup
 
+def save_as_csv(df, path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
-def to_bigquery(df, destination_table="condos.simple", project_id="jaap-scraper"):
-    # Reading in the current dataset
-    query = f"SELECT * FROM {destination_table}"
-    df_bq = pandas_gbq.read_gbq(query, project_id=project_id, credentials=credentials)
-
-    # Appending the two datasets and remove duplicates
-    df = df.append(df_bq)
-    df = df.drop_duplicates()
-
-    # Upload newly merged dataset
-    pandas_gbq.to_gbq(df, destination_table=destination_table, project_id=project_id, if_exists="replace",
-                      credentials=credentials)
-
-    print("Done with writing to BigQuery")
+    filename = f"{datetime.now().date()}.csv"
+    df.to_csv(f"{path}{filename}", index=False)
 
 
 def find_features(list_of_features):
@@ -56,3 +42,5 @@ def find_features(list_of_features):
     square_meters = int(re.findall("\d+", square_meters[0])[0]) if square_meters else None
 
     return (house_type, number_of_rooms, square_meters,)
+
+
