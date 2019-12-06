@@ -26,13 +26,17 @@ def get_coordinates(address, city):
 
 
 def get_neighbourhood(zipcode):
-    if len(zipcode) < 4 or not has_numbers(zipcode):
-        return (None, None,)
+    if not zipcode or len(zipcode) < 4 or not has_numbers(zipcode):
+        return (None, None, None,)
     neighbourhood_code = int(zipcode[:4])
     row = neighbourhood_codes[neighbourhood_codes.neighbourhood_code == neighbourhood_code]
     if row.empty:
-        return (None, None,)
-    return (row.neighbourhood.iloc[0], row.living_units.iloc[0],)
+        return (None, None, None,)
+
+    city = row.city.iloc[0] if row.city.iloc[0] else None
+    neighbourhood = row.neighbourhood.iloc[0] if row.neighbourhood.iloc[0] else None
+    living_units = row.living_units.iloc[0] if row.living_units.iloc[0] else None
+    return (city, neighbourhood, living_units,)
 
 
 
